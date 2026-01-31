@@ -6,7 +6,7 @@ import {
   Navbar,
   HeroSection,
   HowItWorks,
-  HeatmapPlaceholder,
+  InteractiveHeatmap,
   Footer,
 } from '@/components/landing';
 
@@ -37,7 +37,7 @@ export default function Home() {
       <main className="flex-1">
         <HeroSection onGetStarted={handleSignUp} />
         <HowItWorks />
-        <HeatmapPlaceholder />
+        <InteractiveHeatmap />
       </main>
 
       <Footer />
