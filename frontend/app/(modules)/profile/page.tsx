@@ -120,7 +120,7 @@ function LoadingSkeleton() {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user, setUser } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [badgeData, setBadgeData] = useState<BadgeData | null>(null);
   const [activeView, setActiveView] = useState<ProfileView>('helper');
@@ -222,6 +222,10 @@ export default function ProfilePage() {
                         user: { ...backendProfile.user, avatar_url: newUrl },
                       });
                     }
+                    // Update auth store so avatar shows in header across all pages
+                    if (user) {
+                      setUser({ ...user, avatar_url: newUrl });
+                    }
                   }}
                   onAvatarDelete={() => {
                     if (backendProfile) {
@@ -229,6 +233,10 @@ export default function ProfilePage() {
                         ...backendProfile,
                         user: { ...backendProfile.user, avatar_url: null },
                       });
+                    }
+                    // Update auth store so avatar is removed from header
+                    if (user) {
+                      setUser({ ...user, avatar_url: null });
                     }
                   }}
                 />
