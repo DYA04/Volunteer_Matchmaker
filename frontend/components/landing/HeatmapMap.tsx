@@ -257,23 +257,6 @@ export default function HeatmapMap({
           <p style="font-size: 13px; color: #666; margin-top: 8px;">
             <strong>${point.volunteersNeeded}</strong> volunteers needed
           </p>
-          <button
-            style="
-              width: 100%;
-              margin-top: 12px;
-              padding: 8px 16px;
-              background-color: #f97316;
-              color: white;
-              border: none;
-              border-radius: 6px;
-              font-size: 13px;
-              font-weight: 500;
-              cursor: pointer;
-            "
-            onclick="alert('Sign up to apply for this opportunity!')"
-          >
-            Learn More
-          </button>
         </div>
       `);
 

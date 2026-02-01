@@ -24,9 +24,6 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
             <Button variant="primary" onClick={onGetStarted} className="text-lg px-8 py-3">
               Get Started
             </Button>
-            <Button variant="outline" className="text-lg px-8 py-3">
-              Learn More
-            </Button>
           </div>
 
           {/* Stats */}
