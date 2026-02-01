@@ -1,10 +1,12 @@
 'use client';
 
-import { HelperStats, Badge, SkillTag, ImpactBulletPoint } from '@/lib/mock/profileData';
+import { HelperStats, SkillTag, ImpactBulletPoint } from '@/lib/mock/profileData';
+import { BadgeData } from '@/lib/mock/badgeData';
+import { BadgeDisplay } from '@/components/badges';
 
 interface HelperViewProps {
   stats: HelperStats;
-  badges: Badge[];
+  badgeData: BadgeData;
   skills: SkillTag[];
   impactBulletPoints: ImpactBulletPoint[];
 }
@@ -34,40 +36,6 @@ function StatCard({
   );
 }
 
-function BadgeIcon({ icon }: { icon: string }) {
-  const icons: Record<string, React.ReactNode> = {
-    users: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-      </svg>
-    ),
-    star: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-      </svg>
-    ),
-    heart: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-      </svg>
-    ),
-    'check-circle': (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  };
-
-  return icons[icon] || icons.star;
-}
-
-const TRACK_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  community: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-  skills: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
-  impact: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-  reliability: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
-};
-
 const IMPACT_ICONS: Record<string, React.ReactNode> = {
   community: (
     <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,7 +54,7 @@ const IMPACT_ICONS: Record<string, React.ReactNode> = {
   ),
 };
 
-export default function HelperView({ stats, badges, skills, impactBulletPoints }: HelperViewProps) {
+export default function HelperView({ stats, badgeData, skills, impactBulletPoints }: HelperViewProps) {
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -133,49 +101,10 @@ export default function HelperView({ stats, badges, skills, impactBulletPoints }
         />
       </div>
 
-      {/* Badge Levels - All 4 Tracks */}
+      {/* Badge Levels - All 4 Tracks (using reusable BadgeDisplay) */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Badge Levels</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {badges.map((badge) => {
-            const colors = TRACK_COLORS[badge.track];
-            const progress = (badge.level / badge.maxLevel) * 100;
-
-            return (
-              <div
-                key={badge.id}
-                className={`p-4 rounded-lg border ${colors.border} ${colors.bg}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg bg-white ${colors.text}`}>
-                    <BadgeIcon icon={badge.icon} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className={`font-semibold ${colors.text}`}>{badge.name}</h4>
-                      <span className={`text-sm font-medium ${colors.text}`}>
-                        Lvl {badge.level}/{badge.maxLevel}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">{badge.description}</p>
-                    <div className="mt-2">
-                      <div className="h-2 bg-white rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            badge.track === 'community' ? 'bg-blue-500' :
-                            badge.track === 'skills' ? 'bg-purple-500' :
-                            badge.track === 'impact' ? 'bg-green-500' : 'bg-orange-500'
-                          }`}
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <BadgeDisplay badgeData={badgeData} variant="expanded" />
       </div>
 
       {/* Skill Tags */}

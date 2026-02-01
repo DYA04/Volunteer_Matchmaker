@@ -9,6 +9,7 @@ import {
   UserProfile,
   AccessibilityPreferences as AccessibilityPrefsType,
 } from '@/lib/mock/profileData';
+import { fetchBadgeData, BadgeData } from '@/lib/mock/badgeData';
 import {
   ProfileHeader,
   ViewToggle,
@@ -56,17 +57,22 @@ export default function ProfilePage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [badgeData, setBadgeData] = useState<BadgeData | null>(null);
   const [activeView, setActiveView] = useState<ProfileView>('helper');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // In production, redirect to auth if not authenticated
     // For dev, we'll show mock data regardless
-    const loadProfile = async () => {
+    const loadData = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchUserProfile();
-        setProfile(data);
+        const [profileData, badges] = await Promise.all([
+          fetchUserProfile(),
+          fetchBadgeData(),
+        ]);
+        setProfile(profileData);
+        setBadgeData(badges);
       } catch (error) {
         console.error('Failed to load profile:', error);
       } finally {
@@ -74,7 +80,7 @@ export default function ProfilePage() {
       }
     };
 
-    loadProfile();
+    loadData();
   }, []);
 
   const handleAccessibilityUpdate = (updates: Partial<AccessibilityPrefsType>) => {
@@ -134,7 +140,7 @@ export default function ProfilePage() {
         <div className="max-w-5xl mx-auto">
           {isLoading ? (
             <LoadingSkeleton />
-          ) : profile ? (
+          ) : profile && badgeData ? (
             <div className="space-y-6">
               {/* Profile Header */}
               <ProfileHeader profile={profile} />
@@ -148,7 +154,7 @@ export default function ProfilePage() {
               ) : (
                 <HelperView
                   stats={profile.helperStats}
-                  badges={profile.badges}
+                  badgeData={badgeData}
                   skills={profile.skills}
                   impactBulletPoints={profile.impactBulletPoints}
                 />
