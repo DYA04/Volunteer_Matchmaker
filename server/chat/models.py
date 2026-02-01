@@ -10,6 +10,9 @@ class Conversation(BaseModel):
     job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='conversations')
     volunteer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='volunteer_conversations')
     poster = models.ForeignKey(User, on_delete=models.CASCADE, related_name='poster_conversations')
+    # Track when each participant last read the conversation
+    volunteer_last_read = models.DateTimeField(null=True, blank=True)
+    poster_last_read = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ('job', 'volunteer')

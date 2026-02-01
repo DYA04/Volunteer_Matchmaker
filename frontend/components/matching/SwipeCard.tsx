@@ -10,8 +10,10 @@ interface SwipeCardProps {
   isTop: boolean;
 }
 
-function formatDistance(distance: number): string {
-  return `${distance.toFixed(1)} mi`;
+function formatDistance(distance: number | null, distanceDisplay: string | null): string {
+  if (distanceDisplay) return distanceDisplay;
+  if (distance !== null) return `~${Math.round(distance)} mi`;
+  return 'Distance unknown';
 }
 
 function formatShiftTime(shiftStart: string): string {
@@ -235,12 +237,19 @@ export default function SwipeCard({ job, onSwipeLeft, onSwipeRight, isTop }: Swi
 
           {/* Footer info */}
           <div className="border-t border-gray-100 pt-4 flex flex-wrap items-center gap-4 text-sm text-gray-600">
-            <span className="flex items-center gap-1.5">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              {formatDistance(job.distance)}
+            {/* Location label */}
+            {job.location_label && (
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {job.location_label}
+              </span>
+            )}
+            {/* Distance */}
+            <span className="flex items-center gap-1.5 text-primary font-medium">
+              {formatDistance(job.distance, job.distance_display)}
             </span>
             <span className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

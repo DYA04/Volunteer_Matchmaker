@@ -8,29 +8,34 @@ from django.utils import timezone
 from authentication.models import User
 from .models import Job, UserProfile, MatchingInterest, JobAcceptance
 from .serializers import (
-    JobMatchSerializer, MatchingInterestSerializer, JobCompletionSerializer,
-    JobCreateSerializer, UserProfileSerializer, BadgeSerializer,
+    JobMatchSerializer, JobDetailSerializer, MatchingInterestSerializer,
+    JobCompletionSerializer, JobCreateSerializer, UserProfileSerializer,
+    UserProfileFullSerializer, LocationUpdateSerializer, BadgeSerializer,
     JobAcceptanceSerializer, AcceptVolunteerSerializer, InterestedUserSerializer,
 )
 from .scoring import calculate_score
 from .badges import compute_badges, record_completion
+from .geocoding import reverse_geocode, forward_geocode
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def matched_jobs(request):
-    radius = float(request.query_params.get('radius', 25))
     limit = int(request.query_params.get('limit', 20))
 
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    # Use user's max_distance preference, or default to 25
+    radius = profile.max_distance_miles or 25
 
     # Pre-filter: open, active jobs
     jobs = Job.objects.filter(status='open', is_active=True).select_related('poster')
 
     # Bounding box pre-filter if user has location
     if profile.latitude is not None and profile.longitude is not None:
+        import math
         lat_delta = radius / 69.0  # ~69 miles per degree latitude
-        lon_delta = radius / (69.0 * max(0.1, abs(__import__('math').cos(__import__('math').radians(profile.latitude)))))
+        lon_delta = radius / (69.0 * max(0.1, abs(math.cos(math.radians(profile.latitude)))))
         jobs = jobs.filter(
             latitude__gte=profile.latitude - lat_delta,
             latitude__lte=profile.latitude + lat_delta,
@@ -48,12 +53,13 @@ def matched_jobs(request):
     scored.sort(key=lambda x: x[1], reverse=True)
     scored = scored[:limit]
 
-    # Serialize with injected score/distance
+    # Serialize with injected score/distance (privacy-safe: no raw coords)
     results = []
     for job, score, distance in scored:
+        job._distance = distance  # Attach for serializer
         data = JobMatchSerializer(job).data
         data['score'] = score
-        data['distance'] = distance
+        data['distance'] = round(distance, 1) if distance else None
         results.append(data)
 
     return Response(results)
@@ -124,9 +130,27 @@ def complete_job(request):
     except Job.DoesNotExist:
         return Response({'error': 'Job not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    # Update JobAcceptance status for this user
+    new_status = 'completed' if completed else 'dropped'
+    try:
+        acceptance = JobAcceptance.objects.get(
+            job=job,
+            user=request.user,
+            is_active=True,
+        )
+        acceptance.status = new_status
+        acceptance.save(update_fields=['status'])
+    except JobAcceptance.DoesNotExist:
+        pass  # User wasn't the volunteer, just record for badges
+
+    # If poster is marking the job complete, update job status too
+    if job.poster == request.user:
+        job.status = 'completed'
+        job.save(update_fields=['status'])
+
     badges = record_completion(request.user, job, completed=completed)
     return Response({
-        'status': 'completed' if completed else 'dropped',
+        'status': new_status,
         'job': job.title,
         'badges': badges,
     })
@@ -148,6 +172,14 @@ def create_job(request):
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
 
+    lat = data.get('latitude', 0.0)
+    lng = data.get('longitude', 0.0)
+
+    # Reverse geocode to get location label
+    location_label = ''
+    if lat and lng:
+        location_label = reverse_geocode(lat, lng)
+
     defaults = {
         'title': data['title'],
         'description': data['description'],
@@ -155,8 +187,9 @@ def create_job(request):
         'poster': request.user,
         'skill_tags': data.get('skill_tags', []),
         'accessibility_requirements': _accessibility_flags_to_requirements(data.get('accessibility_flags', {})),
-        'latitude': data.get('latitude', 0.0),
-        'longitude': data.get('longitude', 0.0),
+        'latitude': lat,
+        'longitude': lng,
+        'location_label': location_label,
     }
 
     if data.get('shift_start'):
@@ -170,7 +203,7 @@ def create_job(request):
         defaults['shift_end'] = defaults['shift_start'] + timezone.timedelta(hours=2)
 
     job = Job.objects.create(**defaults)
-    return Response(JobMatchSerializer(job).data, status=status.HTTP_201_CREATED)
+    return Response(JobDetailSerializer(job).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])
@@ -232,12 +265,15 @@ def get_or_update_profile(request):
         badges = compute_badges(request.user)
         return Response({
             'user': UserSerializer(request.user).data,
-            'profile': UserProfileSerializer(profile).data,
+            'profile': UserProfileFullSerializer(profile).data,
             'badges': badges,
         })
 
-    # PUT / PATCH
-    serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+    # PUT / PATCH - update skills, limitations, max_distance
+    allowed_fields = ['skill_tags', 'limitations', 'max_distance_miles']
+    update_data = {k: v for k, v in request.data.items() if k in allowed_fields}
+
+    serializer = UserProfileFullSerializer(profile, data=update_data, partial=True)
     serializer.is_valid(raise_exception=True)
     serializer.save()
 
@@ -245,8 +281,91 @@ def get_or_update_profile(request):
     badges = compute_badges(request.user)
     return Response({
         'user': UserSerializer(request.user).data,
-        'profile': UserProfileSerializer(profile).data,
+        'profile': UserProfileFullSerializer(profile).data,
         'badges': badges,
+    })
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def update_location(request):
+    """
+    GET: Return current location info
+    PUT: Update location (GPS or manual)
+    """
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == 'GET':
+        return Response({
+            'location_source': profile.location_source,
+            'location_label': profile.location_label,
+            'display_location': profile.display_location,
+            'max_distance_miles': profile.max_distance_miles,
+            'has_location': profile.latitude is not None,
+            'last_updated': profile.last_location_update,
+        })
+
+    # PUT - Update location
+    serializer = LocationUpdateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+
+    source = data.get('location_source', 'gps')
+    profile.location_source = source
+
+    if source == 'manual' and data.get('manual_location'):
+        # Forward geocode the manual location
+        result = forward_geocode(data['manual_location'])
+        if result:
+            lat, lng, label = result
+            profile.latitude = lat
+            profile.longitude = lng
+            profile.location_label = label
+        else:
+            return Response(
+                {'error': 'Could not find that location. Try a city name or ZIP code.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    else:
+        # GPS coordinates provided
+        profile.latitude = data.get('latitude')
+        profile.longitude = data.get('longitude')
+        # Reverse geocode to get label
+        if profile.latitude and profile.longitude:
+            profile.location_label = reverse_geocode(profile.latitude, profile.longitude)
+
+    if 'max_distance_miles' in data:
+        profile.max_distance_miles = data['max_distance_miles']
+
+    profile.last_location_update = timezone.now()
+    profile.save()
+
+    return Response({
+        'location_source': profile.location_source,
+        'location_label': profile.location_label,
+        'display_location': profile.display_location,
+        'max_distance_miles': profile.max_distance_miles,
+        'has_location': True,
+        'last_updated': profile.last_location_update,
+    })
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def revoke_location(request):
+    """Remove location data (user revoking permission)."""
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    profile.latitude = None
+    profile.longitude = None
+    profile.location_label = ''
+    profile.location_source = 'manual'
+    profile.last_location_update = None
+    profile.save()
+
+    return Response({
+        'message': 'Location data removed',
+        'has_location': False,
     })
 
 

@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django.db.models import Q
+from django.utils import timezone
 
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer, SendMessageSerializer
@@ -18,7 +19,7 @@ def list_conversations(request):
         is_active=True,
     ).select_related('job', 'volunteer', 'poster').prefetch_related('messages')
 
-    data = ConversationSerializer(conversations, many=True).data
+    data = ConversationSerializer(conversations, many=True, context={'request': request}).data
     return Response(data)
 
 
@@ -41,8 +42,16 @@ def get_messages(request, conversation_id):
     messages = conversation.messages.select_related('sender').all()
     data = MessageSerializer(messages, many=True).data
 
+    # Mark messages as read for this user
+    now = timezone.now()
+    if request.user == conversation.volunteer:
+        conversation.volunteer_last_read = now
+    elif request.user == conversation.poster:
+        conversation.poster_last_read = now
+    conversation.save(update_fields=['volunteer_last_read' if request.user == conversation.volunteer else 'poster_last_read'])
+
     return Response({
-        'conversation': ConversationSerializer(conversation).data,
+        'conversation': ConversationSerializer(conversation, context={'request': request}).data,
         'messages': data,
     })
 
@@ -88,6 +97,6 @@ def get_conversation_by_job(request, job_id):
             job_id=job_id,
             is_active=True,
         )
-        return Response(ConversationSerializer(conversation).data)
+        return Response(ConversationSerializer(conversation, context={'request': request}).data)
     except Conversation.DoesNotExist:
         return Response({'error': 'No conversation found for this job'}, status=status.HTTP_404_NOT_FOUND)

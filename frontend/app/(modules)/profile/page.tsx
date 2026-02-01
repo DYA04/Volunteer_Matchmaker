@@ -5,10 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/viewmodels/auth.viewmodel';
 import { profileService, ProfileResponse, BadgeResponse } from '@/lib/services/profile.service';
-import {
-  UserProfile,
-  AccessibilityPreferences as AccessibilityPrefsType,
-} from '@/lib/mock/profileData';
+import { UserProfile } from '@/lib/mock/profileData';
 import { BadgeData } from '@/lib/mock/badgeData';
 import {
   ProfileHeader,
@@ -17,6 +14,7 @@ import {
   RequesterView,
   HelperView,
   AccessibilityPreferences,
+  LocationSettings,
 } from '@/components/profile';
 import ProfileEditModal from '@/components/profile/ProfileEditModal';
 
@@ -30,9 +28,7 @@ function adaptProfile(data: ProfileResponse): UserProfile {
     lastName: data.user.last_name || '',
     avatar: undefined,
     bio: '',
-    location: data.profile.latitude && data.profile.longitude
-      ? `${data.profile.latitude.toFixed(2)}, ${data.profile.longitude.toFixed(2)}`
-      : 'Location not set',
+    location: data.profile.display_location || 'Location not set',
     joinedAt: new Date().toISOString(),
     requesterStats: {
       jobsSubmitted: 0,
@@ -130,6 +126,7 @@ export default function ProfilePage() {
   const [activeView, setActiveView] = useState<ProfileView>('helper');
   const [isLoading, setIsLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const [backendProfile, setBackendProfile] = useState<ProfileResponse | null>(null);
 
   const loadData = async () => {
@@ -153,14 +150,6 @@ export default function ProfilePage() {
     }
     loadData();
   }, [isAuthenticated, router]);
-
-  const handleAccessibilityUpdate = (updates: Partial<AccessibilityPrefsType>) => {
-    if (!profile) return;
-    setProfile({
-      ...profile,
-      accessibilityPreferences: { ...profile.accessibilityPreferences, ...updates },
-    });
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -213,16 +202,58 @@ export default function ProfilePage() {
             <LoadingSkeleton />
           ) : profile && badgeData ? (
             <div className="space-y-6">
-              {/* Profile Header with Edit Button */}
+              {/* Profile Header with Edit Buttons */}
               <div className="relative">
                 <ProfileHeader profile={profile} />
-                <button
-                  onClick={() => setShowEditModal(true)}
-                  className="absolute top-4 right-4 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-                >
-                  Edit Profile
-                </button>
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <button
+                    onClick={() => setShowLocationModal(true)}
+                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Location
+                  </button>
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+                  >
+                    Edit Profile
+                  </button>
+                </div>
               </div>
+
+              {/* Location & Distance Info */}
+              {backendProfile && (
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {backendProfile.profile.display_location}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Willing to travel up to {backendProfile.profile.max_distance_miles} miles
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowLocationModal(true)}
+                      className="text-primary text-sm font-medium hover:underline"
+                    >
+                      Update
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* View Toggle */}
               <ViewToggle activeView={activeView} onViewChange={setActiveView} />
@@ -239,11 +270,8 @@ export default function ProfilePage() {
                 />
               )}
 
-              {/* Shared: Accessibility Preferences */}
-              <AccessibilityPreferences
-                preferences={profile.accessibilityPreferences}
-                onUpdate={handleAccessibilityUpdate}
-              />
+              {/* Shared: Accessibility Preferences - uses global context */}
+              <AccessibilityPreferences />
             </div>
           ) : (
             <div className="text-center py-12">
@@ -263,6 +291,21 @@ export default function ProfilePage() {
           currentLimitations={backendProfile.profile.limitations}
         />
       )}
+
+      {/* Location Settings Modal */}
+      <LocationSettings
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onSave={loadData}
+        initialLocation={backendProfile ? {
+          location_source: backendProfile.profile.location_source,
+          location_label: backendProfile.profile.location_label,
+          display_location: backendProfile.profile.display_location,
+          max_distance_miles: backendProfile.profile.max_distance_miles,
+          has_location: backendProfile.profile.latitude !== null,
+          last_updated: null,
+        } : undefined}
+      />
     </div>
   );
 }

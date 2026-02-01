@@ -24,4 +24,8 @@ urlpatterns = [
 
     # Profile
     path('profile', views.get_or_update_profile, name='profile'),
+
+    # Location (privacy-preserving)
+    path('location', views.update_location, name='location'),
+    path('location/revoke', views.revoke_location, name='revoke-location'),
 ]

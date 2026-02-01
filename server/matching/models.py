@@ -18,6 +18,7 @@ class Job(BaseModel):
     poster = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posted_jobs')
     latitude = models.FloatField()
     longitude = models.FloatField()
+    location_label = models.CharField(max_length=255, blank=True, default='')  # e.g., "East Lansing, MI"
     shift_start = models.DateTimeField()
     shift_end = models.DateTimeField()
     skill_tags = models.JSONField(default=list, blank=True)
@@ -41,9 +42,18 @@ class Job(BaseModel):
 
 
 class UserProfile(BaseModel):
+    LOCATION_SOURCE_CHOICES = [
+        ('gps', 'GPS'),
+        ('manual', 'Manual'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='matching_profile')
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    location_source = models.CharField(max_length=10, choices=LOCATION_SOURCE_CHOICES, default='manual')
+    location_label = models.CharField(max_length=255, blank=True, default='')  # e.g., "Lansing, MI"
+    max_distance_miles = models.IntegerField(default=25)  # 1-100 miles
+    last_location_update = models.DateTimeField(null=True, blank=True)
     skill_tags = models.JSONField(default=list, blank=True)
     limitations = models.JSONField(default=list, blank=True)
     jobs_completed = models.IntegerField(default=0)
@@ -51,6 +61,15 @@ class UserProfile(BaseModel):
 
     def __str__(self):
         return f"Profile: {self.user.email}"
+
+    @property
+    def display_location(self):
+        """Return privacy-safe location string."""
+        if self.location_label:
+            return self.location_label
+        if self.latitude is not None and self.longitude is not None:
+            return "Location set"
+        return "Location not set"
 
 
 class JobCompletion(BaseModel):

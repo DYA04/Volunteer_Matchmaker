@@ -11,6 +11,10 @@ export interface ProfileResponse {
   profile: {
     latitude: number | null;
     longitude: number | null;
+    location_source: 'gps' | 'manual';
+    location_label: string;
+    display_location: string;
+    max_distance_miles: number;
     skill_tags: string[];
     limitations: string[];
   };
@@ -28,10 +32,26 @@ export interface BadgeResponse {
 }
 
 export interface UpdateProfilePayload {
-  latitude?: number;
-  longitude?: number;
   skill_tags?: string[];
   limitations?: string[];
+  max_distance_miles?: number;
+}
+
+export interface LocationResponse {
+  location_source: 'gps' | 'manual';
+  location_label: string;
+  display_location: string;
+  max_distance_miles: number;
+  has_location: boolean;
+  last_updated: string | null;
+}
+
+export interface UpdateLocationPayload {
+  latitude?: number;
+  longitude?: number;
+  location_source: 'gps' | 'manual';
+  manual_location?: string;
+  max_distance_miles?: number;
 }
 
 export const profileService = {
@@ -42,6 +62,21 @@ export const profileService = {
 
   async updateProfile(data: UpdateProfilePayload): Promise<ProfileResponse> {
     const response = await api.patch<ProfileResponse>('/matching/profile', data);
+    return response.data;
+  },
+
+  async getLocation(): Promise<LocationResponse> {
+    const response = await api.get<LocationResponse>('/matching/location');
+    return response.data;
+  },
+
+  async updateLocation(data: UpdateLocationPayload): Promise<LocationResponse> {
+    const response = await api.put<LocationResponse>('/matching/location', data);
+    return response.data;
+  },
+
+  async revokeLocation(): Promise<{ message: string; has_location: boolean }> {
+    const response = await api.delete('/matching/location/revoke');
     return response.data;
   },
 };

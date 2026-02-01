@@ -28,6 +28,7 @@ export default function ChatListPage() {
   const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   // Handle redirect from job page with ?job=<id>
   useEffect(() => {
@@ -38,7 +39,8 @@ export default function ChatListPage() {
           router.replace(`/chat/${conv.id}`);
         })
         .catch(() => {
-          // No conversation found, stay on list
+          // No conversation found - poster hasn't confirmed yet
+          setChatError('Chat is not available yet. The job poster needs to confirm your interest first.');
         });
     }
   }, [searchParams, _hasHydrated, isAuthenticated, router]);
@@ -77,6 +79,17 @@ export default function ChatListPage() {
     <Layout>
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Messages</h1>
+
+        {chatError && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-yellow-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="text-yellow-800 text-sm">{chatError}</p>
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="space-y-3">

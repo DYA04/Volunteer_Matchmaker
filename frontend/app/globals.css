@@ -9,9 +9,274 @@
   --color-primary-dark: #c2410c;
   --foreground-rgb: 0, 0, 0;
   --background-rgb: 255, 255, 255;
+
+  /* Base font size for scaling */
+  --base-font-size: 16px;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
+  font-size: var(--base-font-size);
+}
+
+/* ============================================
+   ACCESSIBILITY: High Contrast Mode
+   ============================================ */
+html.high-contrast {
+  --color-primary: #ea580c;
+  --color-primary-hover: #c2410c;
+  --color-primary-light: #fed7aa;
+  --color-primary-dark: #9a3412;
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 255, 255, 255;
+}
+
+html.high-contrast body {
+  background: #ffffff;
+  color: #000000;
+}
+
+html.high-contrast .bg-gray-50 {
+  background-color: #ffffff !important;
+}
+
+html.high-contrast .bg-gray-100 {
+  background-color: #e5e5e5 !important;
+}
+
+html.high-contrast .bg-white {
+  background-color: #ffffff !important;
+  border-color: #000000 !important;
+}
+
+html.high-contrast .text-gray-500,
+html.high-contrast .text-gray-600 {
+  color: #404040 !important;
+}
+
+html.high-contrast .text-gray-400 {
+  color: #525252 !important;
+}
+
+html.high-contrast .border-gray-200,
+html.high-contrast .border-gray-100 {
+  border-color: #404040 !important;
+}
+
+html.high-contrast button,
+html.high-contrast a {
+  text-decoration-thickness: 2px;
+}
+
+html.high-contrast .shadow-sm,
+html.high-contrast .shadow,
+html.high-contrast .shadow-md,
+html.high-contrast .shadow-lg,
+html.high-contrast .shadow-xl {
+  box-shadow: 0 0 0 2px #000000 !important;
+}
+
+/* ============================================
+   ACCESSIBILITY: Reduced Motion
+   ============================================ */
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.reduced-motion .animate-spin,
+html.reduced-motion .animate-pulse,
+html.reduced-motion .animate-bounce {
+  animation: none !important;
+}
+
+/* Also respect system preference */
+@media (prefers-reduced-motion: reduce) {
+  html:not(.reduced-motion-override) *,
+  html:not(.reduced-motion-override) *::before,
+  html:not(.reduced-motion-override) *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY: Large Text Mode
+   ============================================ */
+html.large-text {
+  --base-font-size: 20px;
+}
+
+html.large-text body {
+  font-size: var(--base-font-size);
+  line-height: 1.6;
+}
+
+html.large-text .text-xs {
+  font-size: 0.875rem !important;
+}
+
+html.large-text .text-sm {
+  font-size: 1rem !important;
+}
+
+html.large-text .text-base {
+  font-size: 1.25rem !important;
+}
+
+html.large-text .text-lg {
+  font-size: 1.5rem !important;
+}
+
+html.large-text .text-xl {
+  font-size: 1.75rem !important;
+}
+
+html.large-text .text-2xl {
+  font-size: 2rem !important;
+}
+
+html.large-text .text-3xl {
+  font-size: 2.5rem !important;
+}
+
+html.large-text p,
+html.large-text span,
+html.large-text div,
+html.large-text label,
+html.large-text button {
+  line-height: 1.6;
+}
+
+/* ============================================
+   ACCESSIBILITY: Screen Reader Optimized
+   ============================================ */
+html.sr-optimized *:focus {
+  outline: 3px solid #f97316 !important;
+  outline-offset: 2px !important;
+}
+
+html.sr-optimized *:focus:not(:focus-visible) {
+  outline: 3px solid #f97316 !important;
+}
+
+html.sr-optimized a:focus,
+html.sr-optimized button:focus,
+html.sr-optimized input:focus,
+html.sr-optimized select:focus,
+html.sr-optimized textarea:focus {
+  outline: 3px solid #f97316 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.3) !important;
+}
+
+/* Skip link for keyboard users */
+html.sr-optimized .skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 8px 16px;
+  z-index: 9999;
+  transition: top 0.3s;
+}
+
+html.sr-optimized .skip-link:focus {
+  top: 0;
+}
+
+/* ============================================
+   ACCESSIBILITY: Color Blind Modes
+   ============================================ */
+
+/* Protanopia (Red-blind) - shift reds to more visible colors */
+html.colorblind-protanopia {
+  --color-primary: #0066cc;
+  --color-primary-hover: #0052a3;
+  --color-primary-light: #cce0f5;
+  --color-primary-dark: #003d7a;
+}
+
+html.colorblind-protanopia .bg-red-100,
+html.colorblind-protanopia .bg-red-50 {
+  background-color: #cce0f5 !important;
+}
+
+html.colorblind-protanopia .text-red-500,
+html.colorblind-protanopia .text-red-600,
+html.colorblind-protanopia .text-red-700 {
+  color: #0052a3 !important;
+}
+
+html.colorblind-protanopia .border-red-500 {
+  border-color: #0052a3 !important;
+}
+
+html.colorblind-protanopia .bg-green-500,
+html.colorblind-protanopia .text-green-500 {
+  background-color: #2563eb !important;
+  color: #2563eb !important;
+}
+
+/* Deuteranopia (Green-blind) - shift greens to more visible colors */
+html.colorblind-deuteranopia {
+  --color-primary: #9333ea;
+  --color-primary-hover: #7e22ce;
+  --color-primary-light: #f3e8ff;
+  --color-primary-dark: #6b21a8;
+}
+
+html.colorblind-deuteranopia .bg-green-100,
+html.colorblind-deuteranopia .bg-green-50 {
+  background-color: #f3e8ff !important;
+}
+
+html.colorblind-deuteranopia .text-green-500,
+html.colorblind-deuteranopia .text-green-600 {
+  color: #7e22ce !important;
+}
+
+html.colorblind-deuteranopia .border-green-500,
+html.colorblind-deuteranopia .border-green-400 {
+  border-color: #7e22ce !important;
+}
+
+/* Tritanopia (Blue-blind) - shift blues to more visible colors */
+html.colorblind-tritanopia {
+  --color-primary: #dc2626;
+  --color-primary-hover: #b91c1c;
+  --color-primary-light: #fecaca;
+  --color-primary-dark: #991b1b;
+}
+
+html.colorblind-tritanopia .bg-blue-100,
+html.colorblind-tritanopia .bg-blue-50 {
+  background-color: #fecaca !important;
+}
+
+html.colorblind-tritanopia .text-blue-500,
+html.colorblind-tritanopia .text-blue-600 {
+  color: #b91c1c !important;
+}
+
+html.colorblind-tritanopia .border-blue-500 {
+  border-color: #b91c1c !important;
+}
+
+/* ============================================
+   ACCESSIBILITY: Print Styles
+   ============================================ */
+@media print {
+  html.high-contrast * {
+    background: white !important;
+    color: black !important;
+  }
 }
