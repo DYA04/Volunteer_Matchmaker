@@ -1,6 +1,5 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from authentication.models import User
@@ -11,7 +10,6 @@ from .badges import compute_badges, record_completion
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def matched_jobs(request):
     radius = float(request.query_params.get('radius', 25))
     limit = int(request.query_params.get('limit', 20))
@@ -54,7 +52,6 @@ def matched_jobs(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def swipe_interest(request):
     serializer = MatchingInterestSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -81,7 +78,6 @@ def swipe_interest(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def user_badges(request, user_id):
     try:
         user = User.objects.get(id=user_id)
@@ -97,7 +93,6 @@ def user_badges(request, user_id):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def complete_job(request):
     serializer = JobCompletionSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)

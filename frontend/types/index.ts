@@ -1,3 +1,4 @@
 export * from './auth';
 export * from './api.types';
 export * from './matching';
+export * from './job';
