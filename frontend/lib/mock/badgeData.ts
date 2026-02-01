@@ -2,6 +2,7 @@
 
 export type BadgeTrack = 'specialist' | 'firefighter' | 'anchor' | 'inclusionist';
 export type BadgeLevel = 'bronze' | 'silver' | 'gold';
+export type VolunteerRank = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
 
 export interface TrackBadge {
   id: string;
@@ -20,6 +21,99 @@ export interface BadgeData {
   accessibilityChampion: boolean;
   accessibilityChampionEarnedAt?: string;
   totalPoints: number;
+}
+
+// Volunteer rank metadata
+export const RANK_INFO: Record<VolunteerRank, {
+  name: string;
+  minPoints: number;
+  color: { bg: string; text: string; border: string; gradient: string; progressBar: string };
+}> = {
+  bronze: {
+    name: 'Bronze',
+    minPoints: 0,
+    color: {
+      bg: 'bg-amber-50',
+      text: 'text-amber-700',
+      border: 'border-amber-300',
+      gradient: 'from-amber-600 to-amber-400',
+      progressBar: 'bg-amber-500',
+    },
+  },
+  silver: {
+    name: 'Silver',
+    minPoints: 200,
+    color: {
+      bg: 'bg-gray-50',
+      text: 'text-gray-600',
+      border: 'border-gray-400',
+      gradient: 'from-gray-500 to-gray-300',
+      progressBar: 'bg-gray-400',
+    },
+  },
+  gold: {
+    name: 'Gold',
+    minPoints: 500,
+    color: {
+      bg: 'bg-yellow-50',
+      text: 'text-yellow-700',
+      border: 'border-yellow-400',
+      gradient: 'from-yellow-500 to-yellow-300',
+      progressBar: 'bg-yellow-500',
+    },
+  },
+  platinum: {
+    name: 'Platinum',
+    minPoints: 900,
+    color: {
+      bg: 'bg-cyan-50',
+      text: 'text-cyan-700',
+      border: 'border-cyan-400',
+      gradient: 'from-cyan-500 to-teal-400',
+      progressBar: 'bg-cyan-500',
+    },
+  },
+  diamond: {
+    name: 'Diamond',
+    minPoints: 1300,
+    color: {
+      bg: 'bg-violet-50',
+      text: 'text-violet-700',
+      border: 'border-violet-400',
+      gradient: 'from-violet-500 to-purple-400',
+      progressBar: 'bg-violet-500',
+    },
+  },
+};
+
+const RANK_ORDER: VolunteerRank[] = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
+
+// Helper to determine volunteer rank from total points
+export function getRankFromPoints(totalPoints: number): VolunteerRank {
+  for (let i = RANK_ORDER.length - 1; i >= 0; i--) {
+    if (totalPoints >= RANK_INFO[RANK_ORDER[i]].minPoints) {
+      return RANK_ORDER[i];
+    }
+  }
+  return 'bronze';
+}
+
+// Helper to get progress percentage toward the next rank (0-100)
+export function getRankProgress(totalPoints: number): number {
+  const rank = getRankFromPoints(totalPoints);
+  const rankIndex = RANK_ORDER.indexOf(rank);
+  if (rankIndex === RANK_ORDER.length - 1) return 100; // Max rank
+  const currentMin = RANK_INFO[rank].minPoints;
+  const nextMin = RANK_INFO[RANK_ORDER[rankIndex + 1]].minPoints;
+  return Math.round(((totalPoints - currentMin) / (nextMin - currentMin)) * 100);
+}
+
+// Helper to get points remaining until next rank (0 if max rank)
+export function getPointsToNextRank(totalPoints: number): number {
+  const rank = getRankFromPoints(totalPoints);
+  const rankIndex = RANK_ORDER.indexOf(rank);
+  if (rankIndex === RANK_ORDER.length - 1) return 0;
+  return RANK_INFO[RANK_ORDER[rankIndex + 1]].minPoints - totalPoints;
 }
 
 // Track metadata

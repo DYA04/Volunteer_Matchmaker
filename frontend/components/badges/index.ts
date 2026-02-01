@@ -4,3 +4,4 @@ export {
   BadgeCardExpanded,
   AccessibilityChampionBadge,
 } from './BadgeCard';
+export { default as VolunteerRank } from './VolunteerRank';

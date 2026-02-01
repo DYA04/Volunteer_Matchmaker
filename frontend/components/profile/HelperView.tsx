@@ -2,7 +2,7 @@
 
 import { HelperStats, SkillTag, ImpactBulletPoint } from '@/lib/mock/profileData';
 import { BadgeData } from '@/lib/mock/badgeData';
-import { BadgeDisplay } from '@/components/badges';
+import { BadgeDisplay, VolunteerRank } from '@/components/badges';
 
 interface HelperViewProps {
   stats: HelperStats;
@@ -104,6 +104,7 @@ export default function HelperView({ stats, badgeData, skills, impactBulletPoint
       {/* Badge Levels - All 4 Tracks (using reusable BadgeDisplay) */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Badge Levels</h3>
+        <VolunteerRank totalPoints={badgeData.totalPoints} />
         <BadgeDisplay badgeData={badgeData} variant="expanded" />
       </div>
 
