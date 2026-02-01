@@ -461,3 +461,38 @@ def my_interested_jobs(request):
     jobs = [i.job for i in interests]
     data = JobMatchSerializer(jobs, many=True).data
     return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def retract_application(request, job_id):
+    """Volunteer retracts their application for a job."""
+    try:
+        job = Job.objects.get(id=job_id, is_active=True)
+    except Job.DoesNotExist:
+        return Response({'error': 'Job not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Find and delete the JobAcceptance
+    try:
+        acceptance = JobAcceptance.objects.get(user=request.user, job=job)
+    except JobAcceptance.DoesNotExist:
+        return Response({'error': 'You have not applied to this job.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Only allow retraction if status is pending or confirmed (not completed/in_progress)
+    if acceptance.status in ('completed', 'in_progress'):
+        return Response(
+            {'error': 'Cannot retract from a job that is in progress or completed.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Delete the acceptance
+    acceptance.delete()
+
+    # Also update the MatchingInterest to not interested
+    MatchingInterest.objects.filter(user=request.user, job=job).update(interested=False)
+
+    return Response({
+        'status': 'Application retracted',
+        'job_id': str(job_id),
+        'job_title': job.title,
+    })
