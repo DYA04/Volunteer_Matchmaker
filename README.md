@@ -1,6 +1,6 @@
 # SpartaHack Volunteer Matchmaker
 
-A full-stack web application built in 24 hours at **SpartaHack X** that connects volunteers with local community members who need help. Think "Tinder for volunteering" — swipe right to help, get matched, chat, and make a difference.
+A full-stack web application built in 24 hours at **SpartaHack XI** that connects volunteers with local community members who need help. Think "Tinder for volunteering" — swipe right to help, get matched, chat, and make a difference.
 
 
 ---
@@ -103,4 +103,4 @@ SpartaHack_Project/
 
 ## The Team
 
-Built in 24 hours at **SpartaHack X**.
+Built in 24 hours at **SpartaHack XI**.
